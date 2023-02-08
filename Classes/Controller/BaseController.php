@@ -104,7 +104,7 @@ abstract class BaseController extends ActionController
             if ($exception instanceof TargetNotFoundException) {
                 $response = GeneralUtility::makeInstance(ErrorController::class)->pageNotFoundAction(
                     $GLOBALS['TYPO3_REQUEST'],
-                    'Die gewünschte Stellenausschreibung wurde nicht gefunden.'
+                    'Die gesuchte Veranstaltung wurde nicht gefunden.'
                 );
             } else {
                 throw $exception;
