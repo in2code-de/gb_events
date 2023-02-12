@@ -76,7 +76,7 @@ class ExportController extends BaseController
 
         header('Cache-Control: public');
         header('Pragma: public');
-        header("X-Robots-Tag: noindex, nofollow");
+        header('X-Robots-Tag: noindex, nofollow');
         header('Content-Description: iCalendar Event File');
         header('Content-Transfer-Encoding: binary');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
