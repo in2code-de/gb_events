@@ -25,7 +25,7 @@
           <td>{event.location}</td>
           <f:if condition="{exportEnabled}">
             <td>
-              <f:link.action action="show" controller="Export" arguments="{event : event}"
+              <f:link.action action="show" controller="Export" arguments="{event : event}" rel="nofollow"
                              title="{f:translate(key: 'tx_gbevents_domain_model_event.export')}">
                 <span class="glyphicon glyphicon-calendar"></span>
               </f:link.action>
@@ -38,7 +38,7 @@
         <tfoot>
         <tr>
           <td colspan="4">
-            <f:link.action action="list" controller="Export" class="btn btn-primary pull-right">
+            <f:link.action action="list" controller="Export" class="btn btn-primary pull-right" rel="nofollow">
               <span class="glyphicon glyphicon-calendar"></span>
               <f:translate key="tx_gbevents_domain_model_event.export_all"/>
             </f:link.action>
