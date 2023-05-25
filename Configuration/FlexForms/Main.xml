@@ -52,11 +52,41 @@
                                 <type>input</type>
                                 <eval>int</eval>
                                 <size>5</size>
-                                <default>1</default>
+                                <default></default>
                             </config>
                             <displayCond>FIELD:settings.displayMode:!=:calendar</displayCond>
                         </TCEforms>
                     </settings.years>
+                    <settings.timerange.start>
+                        <TCEforms>
+                            <label>Show events beginning at this date and time or later</label>
+                            <config>
+                                <type>input</type>
+                                <renderType>inputDateTime</renderType>
+                                <eval>datetime</eval>
+                                <size>12</size>
+                                <default></default>
+                            </config>
+                            <!--<displayCond>FIELD:settings.displayMode:=:archive</displayCond>-->
+                            <displayCond>FIELD:settings.displayMode:!=:calendar</displayCond>
+                        </TCEforms>
+                    </settings.timerange.start>
+                    <settings.timerange.end>
+                        <TCEforms>
+                            <label>
+                                Show events beginning at this date and time or earlier
+                            </label>
+                            <config>
+                                <type>input</type>
+                                <renderType>inputDateTime</renderType>
+                                <eval>datetime</eval>
+                                <size>12</size>
+                                <default></default>
+                            </config>
+                            <!--<displayCond>FIELD:settings.displayMode:=:archive</displayCond>-->
+                            <displayCond>FIELD:settings.displayMode:!=:calendar</displayCond>
+                        </TCEforms>
+                    </settings.timerange.end>
                     <settings.detailsPid>
                         <TCEforms>
                             <label>
