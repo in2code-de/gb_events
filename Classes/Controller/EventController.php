@@ -20,7 +20,9 @@ class EventController extends BaseController
                     $this->settings['years'] ?? 1,
                     (bool)($this->settings['showStartedEvents'] ?? true),
                     $this->settings['categories'] ?? '',
-                    $filter
+                    $filter,
+                    $this->settings['timerange']['start'] ?? '',
+                    $this->settings['timerange']['end'] ?? ''
                 );
                 $this->addCacheTags($events, 'tx_gbevents_domain_model_event');
                 $this->view->assign('events', $events);

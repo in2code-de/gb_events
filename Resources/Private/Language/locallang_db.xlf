@@ -47,6 +47,12 @@
 			<trans-unit id="flexform.default.settings.showStartedEvents">
 				<source>Show events spanning multiple days until the stop date has passed</source>
 			</trans-unit>
+			<trans-unit id="flexform.default.settings.timerange.start">
+				<source>Show events at this date and time or later</source>
+			</trans-unit>
+			<trans-unit id="flexform.default.settings.timerange.end">
+				<source>Show events before this date and time</source>
+			</trans-unit>
 			<trans-unit id="tx_gbevents_domain_model_event">
 				<source>Event</source>
 			</trans-unit>

@@ -54,14 +54,22 @@ class EventRepository extends Repository
      * @param string $categories
      * @return array
      */
-    public function findAll($years = 1, $showStartedEvents = false, $categories = null, array $filter = [])
-    {
+    public function findAll(
+        $years = 1,
+        $showStartedEvents = false,
+        $categories = null,
+        array $filter = [],
+        $limitTimeRangeStart = null,
+        $limitTimeRangeEnd = null
+    ) {
         if ((int)$years === 0) {
             $years = 1;
         }
 
         $startDate = new DateTime('midnight');
         $stopDate = new DateTime(sprintf('midnight + %d years', (int)$years));
+        $timeRangeBegin = $limitTimeRangeStart ? $this->timestampToDatetime($limitTimeRangeStart) : null;
+        $timeRangeEnd = $limitTimeRangeEnd ? $this->timestampToDatetime($limitTimeRangeEnd) : null;
 
         if (isset($filter['day'])) {
             try {
@@ -74,14 +82,41 @@ class EventRepository extends Repository
         }
 
         $query = $this->queryAllBetween($startDate, $stopDate, $showStartedEvents, $categories);
-
-        return $this->resolveRecurringEvents(
-            $query->execute(),
+        $result = $query->execute();
+        $items = $this->resolveRecurringEvents(
+            $result,
             $grouped = false,
             $startDate,
             $stopDate,
             $showStartedEvents
         );
+
+        if ($limitTimeRangeStart || $limitTimeRangeEnd) {
+            $events = [];
+            foreach ($items as $key => $item) {
+                $eventTimeStamp = $item->getEventDate()->getTimestamp();
+                if ($limitTimeRangeStart && $limitTimeRangeEnd) {
+                    if ($eventTimeStamp >= (int) $limitTimeRangeStart
+                        && $eventTimeStamp <= (int) $limitTimeRangeEnd
+                    ) {
+                        $events[$key] = $item;
+                    }
+                } elseif ($limitTimeRangeStart) {
+                    if ($eventTimeStamp >= (int) $limitTimeRangeStart) {
+                        $events[$key] = $item;
+                    }
+                } elseif ($limitTimeRangeEnd) {
+                    if ($eventTimeStamp <= (int) $limitTimeRangeEnd) {
+                        $events[$key] = $item;
+                    }
+                }
+            }
+        } else {
+            $events = $items;
+        }
+        unset($items);
+
+        return $events;
     }
 
     /**
@@ -92,8 +127,11 @@ class EventRepository extends Repository
      * @param string $categories
      * @return array
      */
-    public function findUpcoming($limit = 3, $showStartedEvents = false, $categories = null)
-    {
+    public function findUpcoming(
+        $limit = 3,
+        $showStartedEvents = false,
+        $categories = null
+    ) {
         if ((int)$limit === 0) {
             $limit = 3;
         }
@@ -124,35 +162,80 @@ class EventRepository extends Repository
      * @param string $categories
      * @return array
      */
-    public function findBygone($limit = 3, $categories = null)
-    {
+    public function findBygone(
+        $limit = 3,
+        $categories = null,
+        $limitTimeRangeStart = null,
+        $limitTimeRangeEnd = null
+    ) {
         if ((int)$limit === 0) {
             $limit = 3;
         }
 
-        $startDate = new DateTime('midnight - 10 years');
+        $startDate = new DateTime('midnight - 20 years');
         $stopDate = new DateTime('midnight - 1 second');
         $cutOffDate = new DateTime($limit . ' years ago midnight');
+        $timeRangeBegin = $limitTimeRangeStart ? $this->timestampToDatetime($limitTimeRangeStart) : null;
+        $timeRangeEnd = $limitTimeRangeEnd ? $this->timestampToDatetime($limitTimeRangeEnd) : null;
 
         $query = $this->createQuery();
         $query->setOrderings(['event_date' => QueryInterface::ORDER_ASCENDING]);
         /** @var ConstraintInterface $conditions */
         $conditions = $query->greaterThanOrEqual('event_date', $startDate);
         $this->applyRecurringConditions($query, $conditions, $startDate, $stopDate, $categories);
-        $events = array_filter(
-            $this->resolveRecurringEvents($query->execute(), $grouped = false, $startDate, $stopDate, true, 0, true),
+        $result = $query->execute();
+
+        $items = array_filter(
+            $this->resolveRecurringEvents($result, $grouped = false, $startDate, $stopDate, true, 0, true),
             function (Event $event) use (&$cutOffDate, &$stopDate) {
                 return $event->getEventDate() >= $cutOffDate && $event->getEventDate() <= $stopDate;
             }
         );
         usort(
-            $events,
+            $items,
             function (Event $a, Event $b) {
                 return strcmp($a->getEventDate()->getTimestamp(), $b->getEventDate()->getTimestamp());
             }
         );
+        if ($limitTimeRangeStart || $limitTimeRangeEnd) {
+            $events = [];
+            foreach ($items as $key => $item) {
+                $eventTimeStamp = $item->getEventDate()->getTimestamp();
+                if ($limitTimeRangeStart && $limitTimeRangeEnd) {
+                    if ($eventTimeStamp >= (int) $limitTimeRangeStart
+                     && $eventTimeStamp <= (int) $limitTimeRangeEnd
+                    ) {
+                        $events[$key] = $item;
+                    }
+                } elseif ($limitTimeRangeStart) {
+                    if ($eventTimeStamp >= (int) $limitTimeRangeStart) {
+                        $events[$key] = $item;
+                    }
+                } elseif ($limitTimeRangeEnd) {
+                    if ($eventTimeStamp <= (int) $limitTimeRangeEnd) {
+                        $events[$key] = $item;
+                    }
+                }
+            }
+        } else {
+            $events = $items;
+        }
+        unset($items);
 
         return array_reverse($events);
+    }
+
+    protected function timestampToDatetime ($timestamp) : ?\DateTime
+    {
+        if ($timestamp) {
+            $dateTime = new \DateTime();
+            // If you must have use time zones
+            // $dateTime = new \DateTime('now', new \DateTimeZone('Europe/Helsinki'));
+            $dateTime->setTimestamp($timestamp);
+            // echo $date->format($datetimeFormat);
+            return $dateTime;
+        }
+        return null;
     }
 
     /**
@@ -169,9 +252,24 @@ class EventRepository extends Repository
         ConstraintInterface $conditions,
         DateTime $startDate,
         DateTime $stopDate,
-        $categories = null
+        $categories = null,
+        DateTime $timeRangeBegin = null,
+        DateTime $timeRangeEnd = null
     ) {
-        $conditions = $query->logicalOr([$conditions, $query->logicalAnd([$query->lessThanOrEqual('event_date', $stopDate), $query->logicalOr([$query->greaterThan('recurringDays', 0), $query->greaterThan('recurringWeeks', 0)]), $query->logicalOr([$query->equals('recurringStop', 0), $query->greaterThanOrEqual('recurringStop', $startDate)])])]);
+        $conditions = $query->logicalOr([
+            $conditions,
+            $query->logicalAnd([
+                $query->lessThanOrEqual('event_date', $stopDate),
+                $query->logicalOr([
+                    $query->greaterThan('recurringDays', 0),
+                    $query->greaterThan('recurringWeeks', 0)
+                ]),
+                $query->logicalOr([
+                    $query->equals('recurringStop', 0),
+                    $query->greaterThanOrEqual('recurringStop', $startDate)
+                ])
+            ])
+        ]);
         $this->applyCategoryFilters($query, $conditions, $categories);
         $query->matching($conditions);
     }
@@ -183,8 +281,11 @@ class EventRepository extends Repository
      * @param ConstraintInterface $conditions
      * @param array $categories
      */
-    protected function applyCategoryFilters(QueryInterface $query, ConstraintInterface &$conditions, $categories)
-    {
+    protected function applyCategoryFilters(
+        QueryInterface $query,
+        ConstraintInterface &$conditions,
+        $categories
+    ) {
         $categories = GeneralUtility::intExplode(',', $categories, true);
         if (is_array($categories) && !empty($categories)) {
             $categoryConditions = array_map(
@@ -193,7 +294,10 @@ class EventRepository extends Repository
                 },
                 $categories
             );
-            $conditions = $query->logicalAnd([$conditions, $query->logicalOr($categoryConditions)]);
+            $conditions = $query->logicalAnd([
+                $conditions,
+                $query->logicalOr($categoryConditions)
+            ]);
         }
     }
 
@@ -292,8 +396,11 @@ class EventRepository extends Repository
      * @param DateTime $currentDate
      * @return bool
      */
-    protected function isVisibleEvent(DateTime $eventDate, $duration = 0, DateTime $currentDate = null)
-    {
+    protected function isVisibleEvent(
+        DateTime $eventDate,
+        $duration = 0,
+        DateTime $currentDate = null
+    ) {
         if (is_null($currentDate)) {
             $currentDate = new DateTime('midnight');
         }
@@ -306,8 +413,11 @@ class EventRepository extends Repository
      * @param DateTime|null $currentDate
      * @return bool
      */
-    protected function isEventInPast(DateTime $eventStart, $duration = 0, DateTime $currentDate = null)
-    {
+    protected function isEventInPast(
+        DateTime $eventStart,
+        $duration = 0,
+        DateTime $currentDate = null
+    ) {
         if (is_null($currentDate)) {
             $currentDate = new DateTime('midnight');
         }
@@ -334,9 +444,17 @@ class EventRepository extends Repository
         DateTime $stopDate,
         $showStartedEvents = false
     ) {
-        $conditions = $query->logicalAnd([$query->greaterThanOrEqual('event_date', $startDate), $query->lessThanOrEqual('event_date', $stopDate)]);
+        $conditions = $query->logicalAnd([
+            $query->greaterThanOrEqual('event_date', $startDate),
+            $query->lessThanOrEqual('event_date', $stopDate)
+        ]);
         if ($showStartedEvents == true) {
-            $conditions = $query->logicalOr([$conditions, $query->logicalAnd([$query->lessThanOrEqual('event_date', $startDate), $query->greaterThanOrEqual('event_stop_date', $startDate)])]);
+            $conditions = $query->logicalOr([
+                $conditions, $query->logicalAnd([
+                    $query->lessThanOrEqual('event_date', $startDate),
+                    $query->greaterThanOrEqual('event_stop_date', $startDate)
+                ])
+            ]);
         }
 
         return $conditions;
