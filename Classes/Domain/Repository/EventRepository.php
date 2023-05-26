@@ -172,7 +172,7 @@ class EventRepository extends Repository
             $limit = 3;
         }
 
-        $startDate = new DateTime('midnight - 10 years');
+        $startDate = new DateTime('midnight - 20 years');
         $stopDate = new DateTime('midnight - 1 second');
         $cutOffDate = new DateTime($limit . ' years ago midnight');
         $timeRangeBegin = $limitTimeRangeStart ? $this->timestampToDatetime($limitTimeRangeStart) : null;
