@@ -61,6 +61,15 @@
 				<source>Show events spanning multiple days until the stop date has passed</source>
 				<target>Mehrtägige Termine bis zum Erreichen des Stopdatum anzeigen</target>
 			</trans-unit>
+			<trans-unit id="flexform.default.settings.timerange.start">
+				<source>Show events at this date and time or later</source>
+				<target>Zeige Events beginnend mit diesem Datum und dieser Zeit</target>
+			</trans-unit>
+			<trans-unit id="flexform.default.settings.timerange.end">
+				<source>Show events before this date and time</source>
+				<target>Zeige Events bevor diesem Datum und dieser Zeit</target>
+				<target></target>
+			</trans-unit>
 			<trans-unit id="tx_gbevents_domain_model_event">
 				<source>Event</source>
 				<target>Termin</target>

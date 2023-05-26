@@ -59,7 +59,9 @@
                     </settings.years>
                     <settings.timerange.start>
                         <TCEforms>
-                            <label>Show events beginning at this date and time or later</label>
+                            <label>
+                                LLL:EXT:gb_events/Resources/Private/Language/locallang_db.xlf:flexform.default.settings.timerange.start
+                            </label>
                             <config>
                                 <type>input</type>
                                 <renderType>inputDateTime</renderType>
@@ -74,7 +76,7 @@
                     <settings.timerange.end>
                         <TCEforms>
                             <label>
-                                Show events beginning at this date and time or earlier
+                                LLL:EXT:gb_events/Resources/Private/Language/locallang_db.xlf:flexform.default.settings.timerange.end
                             </label>
                             <config>
                                 <type>input</type>
